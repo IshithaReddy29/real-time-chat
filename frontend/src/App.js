@@ -23,7 +23,18 @@ function App() {
   } catch (err) {
     console.error("Error loading messages:", err);
   }
-};
+  };
+
+  loadMessages();
+
+  socket.on("receiveMessage", (data) => {
+    setMessages((prev) => [...prev, data]);
+  });
+
+  return () => {
+    socket.off("receiveMessage");
+  };
+}, []);
 
   const sendMessage = () => {
     if (!username.trim() || !message.trim()) return;
@@ -36,7 +47,8 @@ function App() {
 
     setMessage("");
   };
-
+console.log("messages =", messages);
+console.log("Is Array?", Array.isArray(messages));
   return (
   <div
     style={{
