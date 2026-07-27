@@ -11,30 +11,19 @@ function App() {
 
   useEffect(() => {
 
-    const loadMessages = async () => {
+   const loadMessages = async () => {
+  try {
+    const res = await axios.get(
+      "https://real-time-chat-cu4o.onrender.com/messages"
+    );
 
-        const res = await axios.get(
-            "https://real-time-chat-cu4o.onrender.com"
-        );
+    console.log(res.data); // Check what comes back
 
-        setMessages(res.data);
-    };
-
-    loadMessages();
-
-    socket.on("receiveMessage", (data) => {
-
-        setMessages((prev) => [...prev, data]);
-
-    });
-
-    return () => {
-
-        socket.off("receiveMessage");
-
-    };
-
-}, []);
+    setMessages(Array.isArray(res.data) ? res.data : []);
+  } catch (err) {
+    console.error("Error loading messages:", err);
+  }
+};
 
   const sendMessage = () => {
     if (!username.trim() || !message.trim()) return;
@@ -88,7 +77,7 @@ function App() {
         backgroundColor: "#f8f9fa"
       }}
     >
-      {messages.map((msg, index) => (
+      {Array.isArray(messages) && messages.map((msg, index) => (
         <div
           key={index}
           style={{
