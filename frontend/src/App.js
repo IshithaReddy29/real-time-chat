@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import io from "socket.io-client";
 import axios from "axios";
 
-const socket = io("http://localhost:5000");
+const socket = io("https://real-time-chat-cu4o.onrender.com");
 
 function App() {
   const [username, setUsername] = useState("");
@@ -14,7 +14,7 @@ function App() {
     const loadMessages = async () => {
 
         const res = await axios.get(
-            "http://localhost:5000/messages"
+            "https://real-time-chat-cu4o.onrender.com"
         );
 
         setMessages(res.data);
