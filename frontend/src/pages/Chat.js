@@ -15,7 +15,7 @@ function Chat() {
 
   const navigate = useNavigate();
 
-  const user = JSON.parse(localStorage.getItem("user"));
+  const user = JSON.parse(localStorage.getItem("user")) ||{};
 
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState([]);
@@ -67,7 +67,7 @@ socket.on("stopTyping", () => {
   socket.off("stopTyping");
 };
 
-  }, []);
+  }, [navigate]);
 
   // Load previous messages
   const loadMessages = async () => {
@@ -93,7 +93,7 @@ socket.on("stopTyping", () => {
 
     const newMessage = {
 
-      username: user.name,
+      username: user.name || "Anonymous",
 
       message: message,
 
