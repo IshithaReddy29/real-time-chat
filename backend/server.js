@@ -15,7 +15,13 @@ const authRoutes = require("./routes/authRoutes");
 console.log("AUTH ROUTES =", authRoutes);
 console.log("Starting Server...");
 
-app.use(cors());
+app.use(cors({
+  origin: [
+    "http://localhost:3000",
+    "https://https://real-time-chat-isnofudly-ishitha2.vercel.app"
+  ],
+  credentials: true
+}));
 app.use(express.json());
 
 console.log(process.env.MONGO_URI);
