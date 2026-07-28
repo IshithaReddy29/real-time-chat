@@ -67,7 +67,7 @@ socket.on("stopTyping", () => {
   socket.off("stopTyping");
 };
 
-  }, [navigate]);
+  }, [navigate,user.name]);
 
   // Load previous messages
   const loadMessages = async () => {
