@@ -18,7 +18,7 @@ console.log("Starting Server...");
 app.use(cors({
   origin: [
     "http://localhost:3000",
-    "https://https://real-time-chat-isnofudly-ishitha2.vercel.app"
+    "https://real-time-chat-isnofudly-ishitha2.vercel.app"
   ],
   credentials: true
 }));
