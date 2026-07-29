@@ -9,7 +9,7 @@ import EmojiPicker from "emoji-picker-react";
 import { FaSmile } from "react-icons/fa";
 
 
-const socket = io("https://real-time-chat-2-2wr0.onrender.com");
+const socket = io("https://real-time-chat-cu4o.onrender.com");
 
 function Chat() {
 
@@ -72,7 +72,7 @@ socket.on("stopTyping", () => {
   // Load previous messages
   const loadMessages = async () => {
     try {
-      const res = await axios.get("https://real-time-chat-2-2wr0.onrender.com/messages");
+      const res = await axios.get("https://real-time-chat-cu4o.onrender.com/messages");
 
 
       setMessages(Array.isArray(res.data) ? res.data : []);

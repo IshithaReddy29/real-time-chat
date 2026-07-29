@@ -20,7 +20,7 @@ function Signup() {
 
     try {
       await axios.post(
-        "https://real-time-chat-3-jmhp.onrender.com/api/auth/signup",
+        "https://real-time-chat-cu4o.onrender.com/api/auth/signup",
         {
           name,
           email,
