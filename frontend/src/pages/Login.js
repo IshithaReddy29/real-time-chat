@@ -13,8 +13,9 @@ function Login({ setToken }) {
 
   try {
     const res = await axios.post(
-      "https://real-time-chat-2-2wr0.onrender.com/api/auth/login",
+      "https://real-time-chat-3-jmhp.onrender.com/api/auth/login",
       {
+        name,
         email,
         password,
       }

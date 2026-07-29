@@ -15,13 +15,15 @@ const authRoutes = require("./routes/authRoutes");
 console.log("AUTH ROUTES =", authRoutes);
 console.log("Starting Server...");
 
-app.use(cors({
-  origin: [
-    "http://localhost:3000",
-    "https://real-time-chat-isnofudly-ishitha2.vercel.app"
-  ],
-  credentials: true
-}));
+app.use(
+  cors({
+    origin: [
+      "http://localhost:3000",
+      "https://real-time-chat-beige-nine.vercel.app",
+    ],
+    credentials: true,
+  })
+);
 app.use(express.json());
 
 console.log(process.env.MONGO_URI);
@@ -33,10 +35,14 @@ const server = http.createServer(app);
 
 const io = new Server(server, {
   cors: {
-    origin: "*",
+    origin: [
+      "http://localhost:3000",
+      "https://real-time-chat-beige-nine.vercel.app",
+    ],
+    methods: ["GET", "POST"],
+    credentials: true,
   },
 });
-
 // ========================
 // Store Online Users
 // ========================
