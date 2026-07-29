@@ -33,8 +33,9 @@ function Login({ setToken }) {
     navigate("/chat");
 
   } catch (err) {
-    alert(err.response?.data?.message || "Login Failed");
-  }
+  console.log(err.response);
+  alert(err.response?.data?.message || err.message);
+}
 };
   return (
     <div
