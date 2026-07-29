@@ -20,6 +20,7 @@ app.use(
     origin: [
       "http://localhost:3000",
       "https://real-time-chat-beige-nine.vercel.app",
+      "https://real-time-chat-9e30c9w8p-ishitha2.vercel.app",
     ],
     credentials: true,
   })
@@ -38,6 +39,7 @@ const io = new Server(server, {
     origin: [
       "http://localhost:3000",
       "https://real-time-chat-beige-nine.vercel.app",
+      "https://real-time-chat-9e30c9w8p-ishitha2.vercel.app",
     ],
     methods: ["GET", "POST"],
     credentials: true,
