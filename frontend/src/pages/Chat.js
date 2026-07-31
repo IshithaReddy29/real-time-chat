@@ -23,10 +23,14 @@ function Chat() {
   const [typingUser, setTypingUser] = useState("");
    const [search, setSearch] = useState("");
   const [showEmoji, setShowEmoji] = useState(false);
+  const [selectedUser, setSelectedUser] = useState(null);
+  const [darkMode, setDarkMode] = useState(localStorage.getItem("darkMode") === "true");
  
   const typingTimeout = useRef(null);
   
-
+  useEffect(() => {
+  localStorage.setItem("darkMode", darkMode);
+}, [darkMode]);
   // Redirect if not logged in
   useEffect(() => {
     if (!localStorage.getItem("token")) {
@@ -46,12 +50,21 @@ function Chat() {
 });
 
     socket.on("receiveMessage", (data) => {
-      setMessages((prev) => [...prev, data]);
-    });
-    socket.on("typing", (username) => {
+      setMessages((prev) => {
 
-    setTypingUser(username);
+    const exists = prev.some(
+        (msg) =>
+            msg.sender === data.sender &&
+            msg.receiver === data.receiver &&
+            msg.message === data.message &&
+            msg.time === data.time
+    );
 
+    if (exists) return prev;
+
+    return [...prev, data];
+
+});
 });
 
 socket.on("stopTyping", () => {
@@ -67,19 +80,31 @@ socket.on("stopTyping", () => {
   socket.off("stopTyping");
 };
 
-  }, [navigate,user.name]);
+  }, [navigate,user.name,selectedUser]);
 
   // Load previous messages
   const loadMessages = async () => {
-    try {
-      const res = await axios.get("https://real-time-chat-cu4o.onrender.com/messages");
 
+  if (!selectedUser) {
+    setMessages([]);
+    return;
+  }
 
-      setMessages(Array.isArray(res.data) ? res.data : []);
-    } catch (err) {
-      console.log(err);
-    }
-  };
+  try {
+
+    const res = await axios.get(
+      `https://real-time-chat-cu4o.onrender.com/messages?sender=${user.name}&receiver=${selectedUser}`
+    );
+
+    setMessages(Array.isArray(res.data) ? res.data : []);
+
+  } catch (err) {
+
+    console.log(err);
+
+  }
+
+};
 
   // Send Message
   const onEmojiClick = (emojiData) => {
@@ -89,26 +114,36 @@ socket.on("stopTyping", () => {
 };
   const sendMessage = () => {
 
-    if (message.trim() === "") return;
+  if (message.trim() === "") return;
 
-    const newMessage = {
+  if (!selectedUser) {
+    alert("Please select a user first.");
+    return;
+  }
 
-      username: user.name || "Anonymous",
+  const newMessage = {
 
-      message: message,
+    sender: user.name || "Anonymous",
 
-      time: new Date().toLocaleTimeString([], {
-        hour: "2-digit",
-        minute: "2-digit",
-      }),
-    };
+    receiver: selectedUser,
 
-    socket.emit("sendMessage", newMessage);
+    message: message,
 
-    setMessage("");
-    socket.emit("stopTyping");
+    time: new Date().toLocaleTimeString([], {
+      hour: "2-digit",
+      minute: "2-digit",
+    }),
+
   };
+  console.log("Sending:", newMessage);
 
+  socket.emit("sendMessage", newMessage);
+
+  setMessage("");
+
+  socket.emit("stopTyping");
+
+};
   // Logout
   const logout = () => {
 
@@ -121,19 +156,40 @@ socket.on("stopTyping", () => {
 
   const filteredMessages = messages.filter((msg) =>
     msg.message.toLowerCase().includes(search.toLowerCase()) ||
-    msg.username.toLowerCase().includes(search.toLowerCase())
+    msg.sender.toLowerCase().includes(search.toLowerCase())
 );
 
   return (
-    <div className="chat-container">
+    <div className="chat-container"
+    style={{
+  background: darkMode ? "#121212" : "#f5f5f5",
+  color: darkMode ? "white" : "black",
+  transition: "0.3s",
+}}>
+      
 
-  <div className="sidebar">
-        <div className="online-users">
+  <div className="sidebar"
+  style={{
+    background: darkMode ? "#1E1E1E" : "#1f2937",
+    color: "white",
+  }}>
+        <div className="online-users"
+        style={{
+  background: darkMode ? "#121212" : "#f5f5f5",
+  color: darkMode ? "white" : "black",
+  transition: "0.3s",
+}}>
 
-  <div className="online-title">
-    <span>🟢 Online Users</span>
-    <span className="count">{onlineUsers.length}</span>
-  </div>
+  <div
+  className="online-title"
+  style={{
+    color: darkMode ? "white" : "#1f2937",
+  }}
+>
+  <span>🟢 Online Users</span>
+
+  <span className="count">{onlineUsers.length}</span>
+</div>
 
   {onlineUsers.length === 0 ? (
 
@@ -145,34 +201,44 @@ socket.on("stopTyping", () => {
 
     onlineUsers.map((name, index) => (
 
-      <div className="online-user-card" key={index}>
+  <div
+    className="online-user-card"
+    key={index}
+    onClick={() => setSelectedUser(name)}
+    style={{
+      background: selectedUser === name
+        ? "#4F46E5"
+        : "#374151",
+      cursor: "pointer",
+      transition: "0.3s",
+    }}
+  >
 
-        <div className="avatar">
+    <div className="avatar">
 
-          {name.charAt(0).toUpperCase()}
+      {name.charAt(0).toUpperCase()}
 
-        </div>
+    </div>
 
-        <div className="user-details">
+    <div className="user-details">
 
-          <div className="user-name">
-            {name}
-          </div>
+      <div className="user-name">
+        {name}
+      </div>
 
-          <div className="user-status">
+      <div className="user-status">
 
-            <span className="green-dot"></span>
+        <span className="green-dot"></span>
 
-            Online
-
-          </div>
-
-        </div>
+        Online
 
       </div>
 
-    ))
+    </div>
 
+  </div>
+
+))
   )}
 
 </div>
@@ -182,9 +248,13 @@ socket.on("stopTyping", () => {
 
       <div>
 
-        <h3>{user.name}</h3>
+        <h3 style={{
+    color: "white",
+  }}>{user.name}</h3>
 
-        <p>🟢 Online</p>
+        <p style={{
+    color: "#4ade80",
+  }}>🟢 Online</p>
 
       </div>
 
@@ -197,22 +267,59 @@ socket.on("stopTyping", () => {
 
   </div>
 
-  <div className="chat-section">
+  <div className="chat-section"
+  style={{
+  background: darkMode ? "#181818" : "#ffffff",
+}}>
 
-    <div className="chat-header">
+    
+    <div
+  className="chat-header"
+  style={{
+    background: darkMode ? "#242424" : "white",
+    color: darkMode ? "white" : "black",
+  }}
+>
 
-      <h2>💬ChatSphere</h2>
+      <h2>
+  {selectedUser
+    ? `💬 Chat with ${selectedUser}`
+    : "💬 Select a user"}
+</h2>
+      <button
+  onClick={() => setDarkMode(!darkMode)}
+  style={{
+    padding: "8px 12px",
+    border: "none",
+    borderRadius: "8px",
+    cursor: "pointer",
+    marginRight: "10px",
+    background: darkMode ? "#FFD54F" : "#333",
+    color: darkMode ? "#000" : "#fff",
+    fontWeight: "bold",
+  }}
+>
+  {darkMode ? "☀️ Light" : "🌙 Dark"}
+</button>
 
       <span>Real Time Chat</span>
 
     </div>
 
-    <div className="search-box">
+    <div className="search-box"
+    style={{
+  background: darkMode ? "#2a2a2a" : "white",
+  color: darkMode ? "white" : "black",
+}}>
 
     <input
         type="text"
         placeholder="🔍 Search messages..."
         value={search}
+        style={{
+    background: darkMode ? "#333" : "#f3f4f6",
+    color: darkMode ? "white" : "black",
+  }}
         onChange={(e) => setSearch(e.target.value)}
     />
 
@@ -220,20 +327,33 @@ socket.on("stopTyping", () => {
 
     <div className="messages">
 
-      {filteredMessages.map((msg, index) => (
+      {filteredMessages
+  .filter((msg) => {
 
+    if (!selectedUser) return false;
+
+    return (
+      (msg.sender === user.name &&
+        msg.receiver === selectedUser) ||
+
+      (msg.sender === selectedUser &&
+        msg.receiver === user.name)
+    );
+
+  })
+  .map((msg, index) => (
         <div
           key={index}
           className={
-            msg.username === user.name
-              ? "my-message"
-              : "other-message"
-          }
+  msg.sender === user.name
+    ? "my-message"
+    : "other-message"
+}
         >
 
           <div className="message-top">
 
-            <strong>{msg.username}</strong>
+           <strong>{msg.sender}</strong>
 
             <span>{msg.time}</span>
 

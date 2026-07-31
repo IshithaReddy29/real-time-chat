@@ -50,12 +50,15 @@ const io = new Server(server, {
 // ========================
 
 const onlineUsers = {};
+const userSockets = {};
 
 // ========================
 // Socket Connection
 // ========================
 
 io.on("connection", (socket) => {
+
+  console.log("✅ Client Connected:", socket.id);
 
   console.log("User Connected");
 
@@ -65,13 +68,16 @@ io.on("connection", (socket) => {
 
  socket.on("join", (username) => {
 
-    console.log("JOIN EVENT RECEIVED:", username);
+  
+  console.log("JOIN EVENT RECEIVED:", username);
 
-    onlineUsers[socket.id] = username;
+  onlineUsers[socket.id] = username;
 
-    console.log("Current Online Users:", onlineUsers);
+  userSockets[username] = socket.id;
 
-    io.emit("onlineUsers", Object.values(onlineUsers));
+  console.log("Current Online Users:", onlineUsers);
+
+  io.emit("onlineUsers", Object.values(onlineUsers));
 
 });
 
@@ -81,25 +87,37 @@ io.on("connection", (socket) => {
 
   socket.on("sendMessage", async (data) => {
 
-    try {
+  try {
 
-      const newMessage = new Message({
-        username: data.username,
-        message: data.message,
-        time: data.time,
-      });
+    const newMessage = new Message({
+    sender: data.sender,
+    receiver: data.receiver,
+    message: data.message,
+    time: data.time,
+});
 
-      await newMessage.save();
+console.log("Saving message:", newMessage);
 
-      io.emit("receiveMessage", data);
+await newMessage.save();
 
-    } catch (err) {
+console.log("Message saved successfully!");
 
-      console.log(err);
+const senderSocket = userSockets[data.sender];
+const receiverSocket = userSockets[data.receiver];
 
-    }
+if (senderSocket) {
+    io.to(senderSocket).emit("receiveMessage", data);
+}
 
-  });
+if (receiverSocket) {
+    io.to(receiverSocket).emit("receiveMessage", data);
+}  } catch (err) {
+
+    console.log(err);
+
+  }
+
+});
 
 // ======================
 // Typing
@@ -122,13 +140,17 @@ socket.on("stopTyping", () => {
 
   socket.on("disconnect", () => {
 
-    delete onlineUsers[socket.id];
+  const username = onlineUsers[socket.id];
 
-    io.emit("onlineUsers", Object.values(onlineUsers));
+  delete userSockets[username];
 
-    console.log("User Disconnected");
+  delete onlineUsers[socket.id];
 
-  });
+  io.emit("onlineUsers", Object.values(onlineUsers));
+
+  console.log("User Disconnected");
+
+});
 
 });
 
@@ -144,7 +166,25 @@ app.get("/messages", async (req, res) => {
 
   try {
 
-    const messages = await Message.find();
+    const { sender, receiver } = req.query;
+
+    const messages = await Message.find({
+
+      $or: [
+
+        {
+          sender: sender,
+          receiver: receiver,
+        },
+
+        {
+          sender: receiver,
+          receiver: sender,
+        },
+
+      ],
+
+    });
 
     res.json(messages);
 
