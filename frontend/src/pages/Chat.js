@@ -27,6 +27,27 @@ function Chat() {
   const [darkMode, setDarkMode] = useState(localStorage.getItem("darkMode") === "true");
  
   const typingTimeout = useRef(null);
+
+  const loadMessages = useCallback(async () => {
+
+  if (!selectedUser) {
+    setMessages([]);
+    return;
+  }
+
+  try {
+
+    const res = await axios.get(
+      `https://real-time-chat-cu4o.onrender.com/messages?sender=${user.name}&receiver=${selectedUser}`
+    );
+
+    setMessages(Array.isArray(res.data) ? res.data : []);
+
+  } catch (err) {
+    console.log(err);
+  }
+
+}, [user.name, selectedUser]);
   
   useEffect(() => {localStorage.setItem("darkMode", darkMode);}, [darkMode]);
   // Redirect if not logged in
@@ -81,26 +102,7 @@ socket.on("stopTyping", () => {
   }, [navigate,user.name,selectedUser,loadMessages]);
 
   // Load previous messages
-const loadMessages = useCallback(async () => {
 
-  if (!selectedUser) {
-    setMessages([]);
-    return;
-  }
-
-  try {
-
-    const res = await axios.get(
-      `https://real-time-chat-cu4o.onrender.com/messages?sender=${user.name}&receiver=${selectedUser}`
-    );
-
-    setMessages(Array.isArray(res.data) ? res.data : []);
-
-  } catch (err) {
-    console.log(err);
-  }
-
-}, [user.name, selectedUser]);
   // Send Message
   const onEmojiClick = (emojiData) => {
 
