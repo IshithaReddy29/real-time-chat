@@ -1,5 +1,5 @@
 import { useRef } from "react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { FaPaperPlane, FaSignOutAlt, FaUserCircle } from "react-icons/fa";
 import io from "socket.io-client";
@@ -28,9 +28,7 @@ function Chat() {
  
   const typingTimeout = useRef(null);
   
-  useEffect(() => {
-  localStorage.setItem("darkMode", darkMode);
-}, [darkMode]);
+  useEffect(() => {localStorage.setItem("darkMode", darkMode);}, [darkMode]);
   // Redirect if not logged in
   useEffect(() => {
     if (!localStorage.getItem("token")) {
@@ -80,10 +78,10 @@ socket.on("stopTyping", () => {
   socket.off("stopTyping");
 };
 
-  }, [navigate,user.name,selectedUser]);
+  }, [navigate,user.name,selectedUser,loadMessages]);
 
   // Load previous messages
-  const loadMessages = async () => {
+const loadMessages = useCallback(async () => {
 
   if (!selectedUser) {
     setMessages([]);
@@ -99,13 +97,10 @@ socket.on("stopTyping", () => {
     setMessages(Array.isArray(res.data) ? res.data : []);
 
   } catch (err) {
-
     console.log(err);
-
   }
 
-};
-
+}, [user.name, selectedUser]);
   // Send Message
   const onEmojiClick = (emojiData) => {
 
@@ -136,7 +131,10 @@ socket.on("stopTyping", () => {
 
   };
   console.log("Sending:", newMessage);
-
+if (selectedUser === user.name) {
+  alert("You can't send messages to yourself.");
+  return;
+}
   socket.emit("sendMessage", newMessage);
 
   setMessage("");
@@ -188,7 +186,9 @@ socket.on("stopTyping", () => {
 >
   <span>🟢 Online Users</span>
 
-  <span className="count">{onlineUsers.length}</span>
+  <span className="count">
+  {onlineUsers.filter((name) => name !== user.name).length}
+</span>
 </div>
 
   {onlineUsers.length === 0 ? (
@@ -199,7 +199,9 @@ socket.on("stopTyping", () => {
 
   ) : (
 
-    onlineUsers.map((name, index) => (
+    onlineUsers
+  .filter((name) => name !== user.name)
+  .map((name, index) => (
 
   <div
     className="online-user-card"
