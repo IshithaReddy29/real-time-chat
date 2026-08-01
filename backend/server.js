@@ -96,6 +96,12 @@ io.on("connection", (socket) => {
     time: data.time,
 });
 
+socket.on("editMessage", (data) => {
+
+    io.emit("messageEdited", data);
+
+});
+
 console.log("Saving message:", newMessage);
 
 await newMessage.save();
@@ -123,15 +129,25 @@ if (receiverSocket) {
 // Typing
 // ======================
 
-socket.on("typing", (username) => {
+socket.on("typing", (data) => {
 
-    socket.broadcast.emit("typing", username);
+    const receiverSocket = userSockets[data.receiver];
+
+    if (receiverSocket) {
+        io.to(receiverSocket).emit("typing", data.sender);
+    }
 
 });
 
-socket.on("stopTyping", () => {
+socket.on("stopTyping", (data) => {
 
-    socket.broadcast.emit("stopTyping");
+    const receiverSocket = userSockets[data.receiver];
+
+    if (receiverSocket) {
+
+        io.to(receiverSocket).emit("stopTyping");
+
+    }
 
 });
   // ========================
@@ -198,6 +214,70 @@ app.get("/messages", async (req, res) => {
 
 });
 
+app.delete("/messages/:id", async (req, res) => {
+  try {
+
+    const deletedMessage = await Message.findByIdAndDelete(req.params.id);
+
+    if (!deletedMessage) {
+      return res.status(404).json({
+        success: false,
+        message: "Message not found",
+      });
+    }
+
+    // Notify everyone that this message was deleted
+    io.emit("messageDeleted", deletedMessage._id);
+
+    res.json({
+      success: true,
+    });
+
+  } catch (err) {
+
+    res.status(500).json({
+      success: false,
+      error: err.message,
+    });
+
+  }
+});
+
+app.put("/messages/:id", async (req, res) => {
+
+    try {
+
+        const updatedMessage = await Message.findByIdAndUpdate(
+            req.params.id,
+            {
+                message: req.body.message,
+            },
+            {
+                new: true,
+            }
+        );
+
+        if (!updatedMessage) {
+            return res.status(404).json({
+                success: false,
+                message: "Message not found",
+            });
+        }
+
+        io.emit("messageEdited", updatedMessage);
+
+        res.json(updatedMessage);
+
+    } catch (err) {
+
+        res.status(500).json({
+            success: false,
+            error: err.message,
+        });
+
+    }
+
+});
 // ========================
 // Start Server
 // ========================

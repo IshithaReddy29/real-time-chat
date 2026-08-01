@@ -19,6 +19,8 @@ function Chat() {
 
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState([]);
+  const [editingId, setEditingId] = useState(null);
+  const [editedMessage, setEditedMessage] = useState("");
   const [onlineUsers, setOnlineUsers] = useState([]);
   const [typingUser, setTypingUser] = useState("");
    const [search, setSearch] = useState("");
@@ -51,6 +53,24 @@ function Chat() {
   
   useEffect(() => {localStorage.setItem("darkMode", darkMode);}, [darkMode]);
   // Redirect if not logged in
+
+  useEffect(() => {
+
+    if (user.name) {
+        socket.emit("join", user.name);
+    }
+
+    return () => {
+        socket.off("onlineUsers");
+        socket.off("receiveMessage");
+        socket.off("typing");
+        socket.off("stopTyping");
+        socket.off("messageDeleted");
+    };
+
+}, [user.name]);
+
+
   useEffect(() => {
     if (!localStorage.getItem("token")) {
       navigate("/");
@@ -58,8 +78,8 @@ function Chat() {
     }
 
     loadMessages();
-    socket.emit("join", user.name);
-    console.log("Joining server as:", user.name);
+    
+  console.log("Joining server as:", user.name);
   socket.on("onlineUsers", (users) => {
 
     console.log("Received Online Users:", users);
@@ -67,6 +87,8 @@ function Chat() {
     setOnlineUsers(users);
 
 });
+
+
 
     socket.on("receiveMessage", (data) => {
       setMessages((prev) => {
@@ -86,6 +108,36 @@ function Chat() {
 });
 });
 
+socket.on("messageEdited", (updatedMessage) => {
+
+    setMessages((prev) =>
+        prev.map((msg) =>
+            msg._id === updatedMessage._id
+                ? { ...msg, message: updatedMessage.message }
+                : msg
+        )
+    );
+
+});
+
+socket.on("messageDeleted", (id) => {
+
+  setMessages((prev) =>
+    prev.filter((msg) => msg._id !== id)
+  );
+
+});
+
+socket.on("typing", (data) => {
+    console.log("Typing event:", data);
+
+    if (typeof data === "string") {
+        setTypingUser(data);
+    } else {
+        setTypingUser(data.sender);
+    }
+});
+
 socket.on("stopTyping", () => {
 
     setTypingUser("");
@@ -94,9 +146,11 @@ socket.on("stopTyping", () => {
 
    return () => {
   socket.off("receiveMessage");
+  socket.off("messageEdited");
   socket.off("onlineUsers");
   socket.off("typing");
   socket.off("stopTyping");
+  socket.off("messageDeleted");
 };
 
   }, [navigate,user.name,selectedUser,loadMessages]);
@@ -133,6 +187,7 @@ socket.on("stopTyping", () => {
 
   };
   console.log("Sending:", newMessage);
+  
 if (selectedUser === user.name) {
   alert("You can't send messages to yourself.");
   return;
@@ -144,6 +199,73 @@ if (selectedUser === user.name) {
   socket.emit("stopTyping");
 
 };
+
+const deleteMessage = async (id) => {
+
+  const confirmDelete = window.confirm(
+    "Are you sure you want to delete this message?"
+  );
+
+  if (!confirmDelete) return;
+
+  try {
+
+    await axios.delete(
+      `https://real-time-chat-cu4o.onrender.com/messages/${id}`
+    );
+
+    setMessages((prev) =>
+      prev.filter((msg) => msg._id !== id)
+    );
+
+  } catch (err) {
+
+    console.log(err);
+
+  }
+
+};
+
+const editMessage = (msg) => {
+    setEditingId(msg._id);
+    setEditedMessage(msg.message);
+};
+
+const saveEditedMessage = async (id) => {
+
+    if (editedMessage.trim() === "") return;
+
+    try {
+
+        await axios.put(
+            `https://real-time-chat-cu4o.onrender.com/messages/${id}`,
+            {
+                message: editedMessage,
+            }
+        );
+
+        socket.emit("editMessage", {
+            _id: id,
+            message: editedMessage,
+        });
+
+        setMessages((prev) =>
+            prev.map((msg) =>
+                msg._id === id
+                    ? { ...msg, message: editedMessage }
+                    : msg
+            )
+        );
+
+        setEditingId(null);
+        setEditedMessage("");
+
+    } catch (err) {
+        console.log(err);
+    }
+
+};
+
   // Logout
   const logout = () => {
 
@@ -356,16 +478,65 @@ if (selectedUser === user.name) {
         >
 
           <div className="message-top">
+    <strong>{msg.sender}</strong>
+    <span>{msg.time}</span>
+</div>
 
-           <strong>{msg.sender}</strong>
+{editingId === msg._id ? (
+    <div className="edit-container">
 
-            <span>{msg.time}</span>
+        <input
+            type="text"
+            value={editedMessage}
+            onChange={(e) => setEditedMessage(e.target.value)}
+            className="edit-input"
+        />
 
-          </div>
+        <div className="edit-actions">
 
-          <p>{msg.message}</p>
+            <button
+                className="save-btn"
+                onClick={() => saveEditedMessage(msg._id)}
+            >
+                Save
+            </button>
+
+            <button
+                className="cancel-btn"
+                onClick={() => {
+                    setEditingId(null);
+                    setEditedMessage("");
+                }}
+            >
+                Cancel
+            </button>
 
         </div>
+
+    </div>
+) : (
+    <p>{msg.message}</p>
+)}
+
+{msg.sender === user.name && editingId !== msg._id && (
+    <div className="message-actions">
+        <button
+            className="edit-btn"
+            onClick={() => editMessage(msg)}
+        >
+            Edit
+        </button>
+
+        <button
+            className="delete-btn"
+            onClick={() => deleteMessage(msg._id)}
+        >
+            Delete
+        </button>
+    </div>
+)}
+
+</div>
 
       ))}
 
@@ -415,19 +586,27 @@ if (selectedUser === user.name) {
 
         onChange={(e) => {
 
-            setMessage(e.target.value);
+    setMessage(e.target.value);
 
-            socket.emit("typing", user.name);
+    if (selectedUser) {
+        socket.emit("typing", {
+            sender: user.name,
+            receiver: selectedUser,
+        });
+    }
 
-            clearTimeout(typingTimeout.current);
+    clearTimeout(typingTimeout.current);
 
-            typingTimeout.current = setTimeout(() => {
+    typingTimeout.current = setTimeout(() => {
 
-                socket.emit("stopTyping");
+        socket.emit("stopTyping", {
+            sender: user.name,
+            receiver: selectedUser,
+        });
 
-            }, 1000);
+    }, 1000);
 
-        }}
+}}
 
         onKeyDown={(e) => {
 

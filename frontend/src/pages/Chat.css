@@ -486,3 +486,74 @@ body{
     border:2px solid #4f46e5;
 
 }
+
+
+.my-message{
+    position:relative;
+    padding-bottom:32px;
+}
+
+.message-actions{
+    display:none;
+    position:absolute;
+    bottom:8px;
+    right:10px;
+    gap:8px;
+}
+
+.my-message:hover .message-actions{
+    display:flex;
+}
+
+.edit-btn,
+.delete-btn,
+.save-btn,
+.cancel-btn{
+
+    border:none;
+    cursor:pointer;
+    border-radius:6px;
+    padding:5px 10px;
+    font-size:12px;
+    font-weight:600;
+}
+
+.edit-btn{
+    background:#3b82f6;
+    color:white;
+}
+
+.delete-btn{
+    background:#ef4444;
+    color:white;
+}
+
+.save-btn{
+    background:#10b981;
+    color:white;
+}
+
+.cancel-btn{
+    background:#6b7280;
+    color:white;
+}
+
+.edit-container{
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+    margin-top:8px;
+}
+
+.edit-input{
+    width:100%;
+    padding:8px;
+    border-radius:8px;
+    border:1px solid #ccc;
+}
+
+.edit-actions{
+    display:flex;
+    justify-content:flex-end;
+    gap:8px;
+}
