@@ -52,9 +52,9 @@ real-time-chat/
 │   └── package.json
 │
 ├── screenshots/
-│   ├── chat-window.png
-│   ├── mongodb-storage.png
-│   └── realtime-chat.png
+│   ├── chat.png
+│   ├── signin.png
+│   └── chat.png
 │
 └── README.md
 ```
