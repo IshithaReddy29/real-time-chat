@@ -25,15 +25,15 @@ A full-stack real-time chat application built using React, Node.js, Express.js, 
 
 ### Chat Window
 
-![Chat Window](screenshots/chat-window.png)
+![Login Window](screenshots/login.png)
 
 ### MongoDB Storage
 
-![MongoDB Storage](screenshots/mongodb-storage.png)
+![Signup Window](screenshots/signin.png)
 
 ### Real-Time Chat
 
-![Real-Time Chat](screenshots/realtime-chat.png)
+![Private Chat](screenshots/chat.png)
 
 ## Project Structure
 
