@@ -27,7 +27,7 @@ A full-stack real-time chat application built using React, Node.js, Express.js, 
 
 ![Login Window](screenshots/login.png)
 
-### MongoDB Storage
+### Signup Window
 
 ![Signup Window](screenshots/signin.png)
 
